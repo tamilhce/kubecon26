@@ -15,8 +15,10 @@ falco:
 # ---- Falcosidekick: web UI + forward every event to Talon ----
 falcosidekick:
   enabled: true
+  replicaCount: 1
   webui:
     enabled: true
+    replicaCount: 1
   config:
     # The integrated Talon service is named "<release>-falco-talon".
     # With `helm install falco ...`, that is "falco-falco-talon".
@@ -36,6 +38,7 @@ responseActions:
 #   miner / pool port  -> TERMINATE the pod (kills the shell + the miner)
 falco-talon:
   enabled: true
+  replicaCount: 1
   config:
     rulesOverride: |
       - action: Label As Suspicious
