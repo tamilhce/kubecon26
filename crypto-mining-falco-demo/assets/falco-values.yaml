@@ -11,6 +11,15 @@ driver:
 
 falco:
   json_output: true
+  # Falco-native capture-on-rule (Falco 0.42.0+; you're on 0.44.1).
+  # When a rule with `capture: true` fires, Falco writes a .scap INSIDE the
+  # Falco container at <path_prefix><timestamp>_<n>.scap -- no ephemeral
+  # container, no lag. Retrieve it with `kubectl cp` (see step5.md).
+  capture:
+    enabled: true
+    path_prefix: /tmp/falco      # files like /tmp/falco_<ts>_<n>.scap
+    mode: rules                  # only rules marked `capture: true`
+    default_duration: 10000      # milliseconds (per 0.42 release notes)
 
 # ---- Falcosidekick: web UI + forward every event to Talon ----
 falcosidekick:
@@ -20,8 +29,9 @@ falcosidekick:
     enabled: true
     replicaCount: 1
   config:
-    # The integrated Talon service is named "<release>-falco-talon".
-    # With `helm install falco ...`, that is "falco-falco-talon".
+    # The integrated Talon service is named "falco-talon" (the subchart does
+    # NOT double-prefix with the release name). Confirm with:
+    #   kubectl -n falco get svc | grep talon
     webhook:
       address: "http://falco-talon:2803"
     # Optional Slack output (uncomment + add a webhook URL):
