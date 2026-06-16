@@ -62,5 +62,4 @@ deploy a vulnerable app, simulate a crypto-mining post-exploit, then **detect**
   fire even if that field is blank.
 - **`kubectl top` empty?** metrics-server needs ~30s after start to populate.
 - **Entry vector is simulated by design** — to demo the real deserialization
-  mechanism conceptually, cover it on a slide; the lab focuses on what runtime
-  defences see and do after code execution.
+  mechanism conceptually.
