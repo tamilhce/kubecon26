@@ -1,7 +1,5 @@
 # Step 5 — Forensics with Falco capture + Stratoshark
 
-The cleanest forensics path needs no manual `sysdig` at all: **Falco records the `.scap` itself** the moment a rule fires (Falco 0.42+, enabled in `falco-values.yaml`). The `Shell Spawned In Web Container` rule is flagged `capture: true`, so the recording starts at the *earliest* sign of the attack and covers the `/tmp` drop, the miner, the mining-pool dial, and Talon's takedown — all in one file, with zero lag and no ephemeral container.
-
 Trigger it by running the attack (if you haven't just now):
 
 ```bash
@@ -41,6 +39,3 @@ fd.name contains /tmp
 evt.type = connect and fd.rport = 3333
 ```{{copy}}
 
-> **Tip for the talk:** capturing on the shell rule means the moment a rule fired is just an event in the file — the `xmrig` execve *is* the instant the miner rule matched. Pre-generate `forensics.scap` before your session and have it open in Stratoshark, so on stage you simply show the recording rather than racing the live capture.
->
-> **Fallback:** if the capture feature misbehaves on the day, `./capture.sh`{{exec}} still does the same thing the old way (node-side sysdig orchestrating the attack into a capture window).
