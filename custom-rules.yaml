@@ -1,0 +1,51 @@
+# =============================================================================
+#  custom-rules.yaml  --  Falco detection rules for the demo.
+#  Loaded via the chart's customRules (see step 2 install command).
+#  Macros/lists are declared first so they resolve regardless of order.
+#  Every rule is interpreter-independent so it fires reliably on Alpine.
+# =============================================================================
+
+- macro: known_miner_binaries
+  condition: (proc.name in (xmrig, kdevtmpfsi, kinsing, minerd, cpuminer, xmr-stak))
+
+- list: mining_pool_ports
+  items: [3333, 4444, 5555, 7777, 14444, 45700]
+
+# 1) A shell spawned by the node app == the RCE foothold. The app's entrypoint
+#    is "node /app/server.js", so the ONLY way a shell appears with node as its
+#    parent is via the vulnerable endpoint. Matching proc.pname=node is robust
+#    and does not depend on k8s metadata being populated.
+- rule: Shell Spawned In Web Container
+  desc: A shell was spawned by the node web app - the app never does this normally.
+  condition: spawned_process and container and proc.pname = node and proc.name in (sh, bash, ash, dash)
+  output: "Shell spawned in web container (proc=%proc.name cmdline=%proc.cmdline parent=%proc.pname pod=%k8s.pod.name ns=%k8s.ns.name)"
+  priority: WARNING
+  tags: [shell, mitre_execution]
+
+# 2) The dropper writing the miner into /tmp. Filesystem syscall -> reliable.
+- rule: Executable Dropped In Tmp
+  desc: A file was written under /tmp inside a container (classic miner dropper).
+  condition: open_write and container and fd.name startswith "/tmp/"
+  output: "File written to /tmp in container (file=%fd.name proc=%proc.name pod=%k8s.pod.name ns=%k8s.ns.name)"
+  priority: WARNING
+  tags: [filesystem, dropper]
+
+# 3) The miner itself. A script run via "/tmp/xmrig" appears as cmdline
+#    "sh /tmp/xmrig", so we match the filename in the command line as well as
+#    known binary names and the stratum protocol string.
+- rule: Crypto Miner Process Launched
+  desc: A known miner binary, a miner filename, or a stratum command line executed.
+  condition: >
+    spawned_process and container and
+    (known_miner_binaries or proc.cmdline contains "xmrig" or proc.cmdline contains "stratum+tcp")
+  output: "Crypto miner launched (proc=%proc.name cmdline=%proc.cmdline pod=%k8s.pod.name ns=%k8s.ns.name)"
+  priority: CRITICAL
+  tags: [cryptomining, T1496]
+
+# 4) The outbound dial to a mining-pool port.
+- rule: Outbound Connection to Mining Pool Port
+  desc: A container connected outbound to a common mining-pool port.
+  condition: outbound and container and fd.dport in (mining_pool_ports)
+  output: "Outbound to mining-pool port (dest=%fd.rip:%fd.rport proc=%proc.name pod=%k8s.pod.name ns=%k8s.ns.name)"
+  priority: CRITICAL
+  tags: [network, cryptomining, T1496]

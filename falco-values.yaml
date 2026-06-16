@@ -1,0 +1,71 @@
+# =============================================================================
+#  falco-values.yaml  --  Helm values for the falcosecurity/falco chart (v6+).
+#  Wires Falco (modern eBPF) + Falcosidekick (UI + webhook to Talon) + the
+#  integrated Falco Talon response engine, whose rules are inline below.
+#  Detection rules are passed separately at install time via --set-file
+#  (see step2.md), because they slot into Falco's rules.d directory.
+# =============================================================================
+
+driver:
+  kind: modern_ebpf            # CO-RE eBPF; works on Killercoda's kernel
+
+falco:
+  json_output: true
+
+# ---- Falcosidekick: web UI + forward every event to Talon ----
+falcosidekick:
+  enabled: true
+  webui:
+    enabled: true
+  config:
+    # The integrated Talon service is named "<release>-falco-talon".
+    # With `helm install falco ...`, that is "falco-falco-talon".
+    webhook:
+      address: "http://falco-falco-talon:2803"
+    # Optional Slack output (uncomment + add a webhook URL):
+    # slack:
+    #   webhookurl: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+    #   minimumpriority: "warning"
+
+# ---- Enable the response-engine subchart ----
+responseActions:
+  enabled: true
+
+# ---- Falco Talon rules (inline) ----
+#   shell detected     -> label the pod suspicious=true
+#   miner / pool port  -> short packet capture, then TERMINATE the pod
+falco-talon:
+  enabled: true
+  config:
+    rulesOverride: |
+      - action: Label As Suspicious
+        actionner: kubernetes:label
+        parameters:
+          level: pod
+          labels:
+            suspicious: "true"
+      - action: Capture Packets
+        actionner: kubernetes:tcpdump
+        parameters:
+          duration: 5
+          snaplen: 512
+      - action: Terminate Pod
+        actionner: kubernetes:terminate
+        parameters:
+          grace_period_seconds: 0
+          ignore_daemonsets: true
+          ignore_statefulsets: true
+      - rule: React to shell in container
+        match:
+          rules:
+            - Shell Spawned In Web Container
+        actions:
+          - action: Label As Suspicious
+      - rule: React to crypto miner
+        match:
+          rules:
+            - Crypto Miner Process Launched
+            - Outbound Connection to Mining Pool Port
+        actions:
+          - action: Capture Packets
+          - action: Terminate Pod

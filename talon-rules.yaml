@@ -1,0 +1,51 @@
+# =============================================================================
+#  talon-rules.yaml  --  REFERENCE COPY of the Falco Talon response rules.
+#  These are already embedded inline in falco-values.yaml under
+#  `falco-talon.config.rulesOverride`, which is how the integrated chart
+#  consumes them. This file is here for readability and for the slide/demo.
+#  (If you install Talon as a STANDALONE chart instead, mount this file.)
+# =============================================================================
+
+# ---------- Action definitions ----------
+- action: Label As Suspicious
+  actionner: kubernetes:label
+  parameters:
+    level: pod
+    labels:
+      suspicious: "true"
+
+- action: Capture Packets
+  actionner: kubernetes:tcpdump
+  parameters:
+    duration: 5
+    snaplen: 512
+
+- action: Terminate Pod
+  actionner: kubernetes:terminate
+  parameters:
+    grace_period_seconds: 0
+    ignore_daemonsets: true
+    ignore_statefulsets: true
+
+# Optional: kill ONLY the shell process instead of the whole pod.
+# - action: Kill Shell
+#   actionner: kubernetes:exec
+#   parameters:
+#     command: "kill -9 $(pgrep -x sh) || true"
+
+# ---------- Rule bindings (names must match the Falco rules) ----------
+- rule: React to shell in container
+  match:
+    rules:
+      - Shell Spawned In Web Container
+  actions:
+    - action: Label As Suspicious
+
+- rule: React to crypto miner
+  match:
+    rules:
+      - Crypto Miner Process Launched
+      - Outbound Connection to Mining Pool Port
+  actions:
+    - action: Capture Packets
+    - action: Terminate Pod
