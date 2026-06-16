@@ -3,7 +3,7 @@
 Detection is half the story; Talon turns alerts into action. The rules (embedded in `falco-values.yaml`, mirrored in `talon-rules.yaml`) say:
 
 - **Shell detected** → label the pod `suspicious=true`.
-- **Miner or mining-pool port detected** → take a 5-second packet capture, then **terminate the pod** (killing the shell and the miner).
+- **Miner or mining-pool port detected** → **terminate the pod** (killing the shell and the miner).
 
 Watch Talon react to the events from the previous step:
 

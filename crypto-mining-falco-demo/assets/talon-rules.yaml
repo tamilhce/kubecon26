@@ -3,7 +3,11 @@
 #  These are already embedded inline in falco-values.yaml under
 #  `falco-talon.config.rulesOverride`, which is how the integrated chart
 #  consumes them. This file is here for readability and for the slide/demo.
-#  (If you install Talon as a STANDALONE chart instead, mount this file.)
+#
+#  NOTE: the kubernetes:tcpdump actionner requires an `output:` target (S3 /
+#  MinIO). Without one, Talon refuses to load the rules ("an output is
+#  required"), so this lab uses sysdig in step 5 for capture instead and the
+#  miner rule simply TERMINATES the pod.
 # =============================================================================
 
 # ---------- Action definitions ----------
@@ -13,12 +17,6 @@
     level: pod
     labels:
       suspicious: "true"
-
-- action: Capture Packets
-  actionner: kubernetes:tcpdump
-  parameters:
-    duration: 5
-    snaplen: 512
 
 - action: Terminate Pod
   actionner: kubernetes:terminate
@@ -47,5 +45,4 @@
       - Crypto Miner Process Launched
       - Outbound Connection to Mining Pool Port
   actions:
-    - action: Capture Packets
     - action: Terminate Pod

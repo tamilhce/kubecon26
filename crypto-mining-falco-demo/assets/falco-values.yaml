@@ -33,7 +33,7 @@ responseActions:
 
 # ---- Falco Talon rules (inline) ----
 #   shell detected     -> label the pod suspicious=true
-#   miner / pool port  -> short packet capture, then TERMINATE the pod
+#   miner / pool port  -> TERMINATE the pod (kills the shell + the miner)
 falco-talon:
   enabled: true
   config:
@@ -44,11 +44,6 @@ falco-talon:
           level: pod
           labels:
             suspicious: "true"
-      - action: Capture Packets
-        actionner: kubernetes:tcpdump
-        parameters:
-          duration: 5
-          snaplen: 512
       - action: Terminate Pod
         actionner: kubernetes:terminate
         parameters:
@@ -67,5 +62,4 @@ falco-talon:
             - Crypto Miner Process Launched
             - Outbound Connection to Mining Pool Port
         actions:
-          - action: Capture Packets
           - action: Terminate Pod
