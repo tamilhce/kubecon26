@@ -16,7 +16,7 @@ What each rule caught:
 Open the **Falcosidekick UI** to see the same events with full Kubernetes context:
 
 ```bash
-kubectl -n falco port-forward svc/falco-falcosidekick-ui 2802:2802 >/dev/null 2>&1 &
+kubectl -n falco port-forward --address 0.0.0.0 svc/falco-falcosidekick-ui 2802:2802 >/dev/null 2>&1 &
 ```{{exec}}
 
 Then open port **2802** from the Killercoda traffic menu (top-right of the terminal).

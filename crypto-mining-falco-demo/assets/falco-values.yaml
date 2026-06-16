@@ -23,7 +23,7 @@ falcosidekick:
     # The integrated Talon service is named "<release>-falco-talon".
     # With `helm install falco ...`, that is "falco-falco-talon".
     webhook:
-      address: "http://falco-falco-talon:2803"
+      address: "http://falco-talon:2803"
     # Optional Slack output (uncomment + add a webhook URL):
     # slack:
     #   webhookurl: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
