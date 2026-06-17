@@ -21,4 +21,4 @@ kubectl -n falco port-forward --address 0.0.0.0 svc/falco-falcosidekick-ui 2802:
 
 Then open port **2802** from the Killercoda traffic menu (top-right of the terminal).
 
-> The rules live in `/root/demo/custom-rules.yaml`. Open it in the editor to show the exact conditions on stage — the miner rule matches known binary names, the `xmrig` filename in the command line, or any `stratum+tcp` mining URL.
+> The rules live in `demo/custom-rules.yaml`.
