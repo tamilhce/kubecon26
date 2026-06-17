@@ -1,6 +1,6 @@
-# Step 2 — Install Falco, then attack
+# Step 2 — Install the Falco detection + response stack
 
-Install the whole detection + response stack in one command — Falco (modern eBPF) with your custom rules, Falcosidekick (UI + forwarding), and the integrated Falco Talon response engine:
+Now bring in the defenses. This installs Falco (modern eBPF) with your custom rules, Falcosidekick (UI + forwarding), and the integrated Falco Talon response engine:
 
 ```bash
 cd /root/demo
@@ -19,16 +19,17 @@ Wait until Falco, Falcosidekick, and Talon are all running:
 kubectl -n falco get pods
 ```{{exec}}
 
-Now launch the simulated attack — one crafted POST that makes the pod spawn a shell, drop a fake `xmrig` into `/tmp`, and run it:
+The miner from step 1 may still be running on the old pod — clean the slate so the next attack is a fresh, monitored run:
+
+```bash
+kubectl -n shop rollout restart deploy/nextshop
+kubectl -n shop rollout status deploy/nextshop
+```{{exec}}
+
+With the cluster now watched, launch the attack again:
 
 ```bash
 ./attack.sh
 ```{{exec}}
 
-Watch the miner burn CPU on the pod (metrics-server is pre-installed):
-
-```bash
-kubectl -n shop top pod
-```{{exec}}
-
-The CPU spike is the visible "damage." Next, let's see what Falco caught.
+This time Falco is watching every syscall. Next, let's see what it caught.
