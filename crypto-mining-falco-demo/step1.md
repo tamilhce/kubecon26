@@ -26,6 +26,12 @@ You should see the **NextShop** page. The interesting endpoint is `POST /api/act
 
 > Use the top-right traffic/port menu in Killercoda to open port **30080** in a browser if you want to see the page.
 
+First, check the pod's CPU usage in the normal case — note how little it uses:
+
+```bash
+kubectl -n shop top pod
+```{{exec}}
+
 Now attack it **before any defenses are in place** — one crafted POST that makes the pod spawn a shell, drop a fake `xmrig` into `/tmp`, and run it:
 
 ```bash
