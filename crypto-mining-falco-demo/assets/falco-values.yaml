@@ -27,6 +27,7 @@ falcosidekick:
   replicaCount: 1
   webui:
     enabled: true
+    disableauth: true
     replicaCount: 1
   config:
     # The integrated Talon service is named "falco-talon" (the subchart does
