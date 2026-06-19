@@ -1,0 +1,100 @@
+# =============================================================================
+#  INTENTIONALLY VULNERABLE DEMO APP  --  ISOLATED LAB USE ONLY
+# -----------------------------------------------------------------------------
+#  This is a teaching artifact. It deliberately runs commands from an HTTP
+#  request to STAND IN FOR a post-exploitation "code execution" state. It is
+#  NOT an exploit for any real CVE and must NEVER be deployed anywhere that is
+#  reachable from an untrusted network. It exists only so a Killercoda
+#  participant can trigger the Falco detection chain themselves.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    pod-security.kubernetes.io/enforce: privileged   # demo only: keeps it simple
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-app-code
+  namespace: shop
+data:
+  server.js: |
+    // Minimal Node server that imitates a Next.js Server Action endpoint.
+    // No external dependencies -> starts in seconds on Killercoda.
+    // The /api/action handler is INTENTIONALLY insecure (demo only).
+    const http = require("http");
+    const { exec } = require("child_process");
+
+    const PAGE = `<!doctype html><html><head><title>NextShop</title></head>
+      <body style="font-family:sans-serif;max-width:640px;margin:40px auto">
+      <h1>NextShop</h1>
+      <p>A (pretend) storefront running a Next.js-style server action endpoint.</p>
+      <p>This is a security demo. The /api/action endpoint stands in for a
+      post-exploit code-execution primitive.</p></body></html>`;
+
+    const server = http.createServer((req, res) => {
+      if (req.url === "/healthz") { res.writeHead(200); return res.end("ok"); }
+      if (req.method === "GET") { res.writeHead(200,{"content-type":"text/html"}); return res.end(PAGE); }
+
+      // Imitates a Server Action POST: the client sends a "next-action" header
+      // and a body. In a real RSC RCE the body would be a deserialization
+      // payload; here we just take a "cmd" field to SIMULATE the same outcome.
+      if (req.method === "POST" && req.url === "/api/action") {
+        let body = "";
+        req.on("data", c => body += c);
+        req.on("end", () => {
+          let cmd = "";
+          try { cmd = JSON.parse(body).cmd || ""; } catch { cmd = ""; }
+          if (!cmd) { res.writeHead(400); return res.end("no cmd"); }
+          // INTENTIONAL VULNERABILITY (demo): execute attacker-supplied input.
+          exec(cmd, { timeout: 60000 }, (e, out, err) => {
+            res.writeHead(200, {"content-type":"text/plain"});
+            res.end((out||"") + (err||"") + (e ? "\n[exit " + e.code + "]" : ""));
+          });
+        });
+        return;
+      }
+      res.writeHead(404); res.end("not found");
+    });
+    server.listen(3000, () => console.log("NextShop listening on :3000"));
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextshop
+  namespace: shop
+  labels: { app: nextshop }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: nextshop }
+  template:
+    metadata:
+      labels: { app: nextshop }
+    spec:
+      containers:
+        - name: nextshop
+          image: node:20-alpine
+          command: ["node", "/app/server.js"]
+          ports: [{ containerPort: 3000 }]
+          volumeMounts:
+            - { name: code, mountPath: /app }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 3000 }
+            initialDelaySeconds: 3
+      volumes:
+        - name: code
+          configMap: { name: shop-app-code }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextshop
+  namespace: shop
+spec:
+  selector: { app: nextshop }
+  ports:
+    - { port: 80, targetPort: 3000, nodePort: 30080 }
+  type: NodePort

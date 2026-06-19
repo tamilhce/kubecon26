@@ -1,0 +1,79 @@
+# =============================================================================
+#  falco-values.yaml  --  Helm values for the falcosecurity/falco chart (v6+).
+#  Wires Falco (modern eBPF) + Falcosidekick (UI + webhook to Talon) + the
+#  integrated Falco Talon response engine, whose rules are inline below.
+#  Detection rules are passed separately at install time via --set-file
+#  (see step2.md), because they slot into Falco's rules.d directory.
+# =============================================================================
+
+driver:
+  kind: modern_ebpf            # CO-RE eBPF; works on Killercoda's kernel
+
+falco:
+  json_output: true
+  # Falco-native capture-on-rule (Falco 0.42.0+; you're on 0.44.1).
+  # When a rule with `capture: true` fires, Falco writes a .scap INSIDE the
+  # Falco container at <path_prefix><timestamp>_<n>.scap -- no ephemeral
+  # container, no lag. Retrieve it with `kubectl cp` (see step5.md).
+  capture:
+    enabled: true
+    path_prefix: /tmp/falco      # files like /tmp/falco_<ts>_<n>.scap
+    mode: rules                  # only rules marked `capture: true`
+    default_duration: 10000      # milliseconds (per 0.42 release notes)
+
+# ---- Falcosidekick: web UI + forward every event to Talon ----
+falcosidekick:
+  enabled: true
+  replicaCount: 1
+  webui:
+    enabled: true
+    disableauth: true
+    replicaCount: 1
+  config:
+    # The integrated Talon service is named "falco-talon" (the subchart does
+    # NOT double-prefix with the release name). Confirm with:
+    #   kubectl -n falco get svc | grep talon
+    webhook:
+      address: "http://falco-talon:2803"
+    # Optional Slack output (uncomment + add a webhook URL):
+    # slack:
+    #   webhookurl: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+    #   minimumpriority: "warning"
+
+# ---- Enable the response-engine subchart ----
+responseActions:
+  enabled: true
+
+# ---- Falco Talon rules (inline) ----
+#   shell detected     -> label the pod suspicious=true
+#   miner / pool port  -> TERMINATE the pod (kills the shell + the miner)
+falco-talon:
+  enabled: true
+  replicaCount: 1
+  config:
+    rulesOverride: |
+      - action: Label As Suspicious
+        actionner: kubernetes:label
+        parameters:
+          level: pod
+          labels:
+            suspicious: "true"
+      - action: Terminate Pod
+        actionner: kubernetes:terminate
+        parameters:
+          grace_period_seconds: 0
+          ignore_daemonsets: true
+          ignore_statefulsets: true
+      - rule: React to shell in container
+        match:
+          rules:
+            - Shell Spawned In Web Container
+        actions:
+          - action: Label As Suspicious
+      - rule: React to crypto miner
+        match:
+          rules:
+            - Crypto Miner Process Launched
+            - Outbound Connection to Mining Pool Port
+        actions:
+          - action: Terminate Pod
