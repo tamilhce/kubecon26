@@ -1,7 +1,6 @@
-# Stopping a Crypto-Mining Attack in Kubernetes — Killercoda Demo
+# Next.Js RCE | FALCO | Kubernetes — Killercoda Demo
 
-A hands-on Killercoda scenario for a KubeCon-style security talk. Participants
-deploy a vulnerable app, simulate a crypto-mining post-exploit, then **detect**
+A hands-on Killercoda scenario for Participants. TO deploy a vulnerable app, simulate a Next.Js  post-exploit, then **detect**
 (Falco + Falcosidekick), **respond** (Falco Talon), and **investigate**
 (sysdig → Stratoshark).
 
