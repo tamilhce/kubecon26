@@ -6,7 +6,7 @@
 # =============================================================================
 
 - macro: known_miner_binaries
-  condition: (proc.name in (xmrig, kdevtmpfsi, kinsing, minerd, cpuminer, xmr-stak))
+  condition: (proc.name in (workload-sim, xmrig, kdevtmpfsi, kinsing, minerd, cpuminer, xmr-stak))
 
 - list: mining_pool_ports
   items: [8444, 4444, 5555, 7777, 14444, 45700]
