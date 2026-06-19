@@ -1,6 +1,6 @@
 # Next.Js RCE | FALCO | Kubernetes — Killercoda Demo
 
-A hands-on Killercoda scenario for Participants. TO deploy a vulnerable app, simulate a Next.Js  post-exploit, then **detect**
+A hands-on Killercoda scenario for Participants. To deploy a vulnerable app, simulate a Next.Js  post-exploit, then **detect**
 (Falco + Falcosidekick), **respond** (Falco Talon), and **investigate**
 (sysdig → Stratoshark).
 
