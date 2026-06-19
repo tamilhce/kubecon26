@@ -1,6 +1,6 @@
 {
-  "title": "Stopping a Crypto-Mining Attack in Kubernetes with Falco",
-  "description": "Deploy a deliberately-vulnerable app, simulate a crypto-mining post-exploit, detect it with Falco + Falcosidekick, auto-respond with Falco Talon, and capture syscalls for Stratoshark forensics. All payloads are harmless simulations for isolated lab use.",
+  "title": "Stopping the Vulenarble Attack in Kubernetes with Falco",
+  "description": "Deploy a deliberately-vulnerable app, simulate a post-exploit, detect it with Falco + Falcosidekick, auto-respond with Falco Talon, and capture syscalls for Stratoshark forensics. All payloads are harmless simulations for isolated lab use.",
   "difficulty": "intermediate",
   "time": "25 minutes",
   "details": {
